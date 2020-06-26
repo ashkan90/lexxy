@@ -1,8 +1,8 @@
 package lexer
 
 import (
+	"lexxy/tokens"
 	"log"
-	"new_lexxy/tokens"
 	"testing"
 )
 
@@ -12,7 +12,7 @@ func TestNextToken(t *testing.T) {
 	test := []struct {
 		expectedType    tokens.TokenType
 		expectedLiteral string
-	} {
+	}{
 		{tokens.LBRACKET, "["},
 		{tokens.FIELD, "Service"},
 		{tokens.LOL, ":"},
@@ -35,9 +35,6 @@ func TestNextToken(t *testing.T) {
 
 		{tokens.RBRACKET, "]"},
 	}
-
-
-
 
 	l := New(input)
 

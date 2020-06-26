@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"new_lexxy/evaluator"
-	"new_lexxy/lexer"
-	"new_lexxy/parser"
-	"new_lexxy/tokens"
+	"lexxy/evaluator"
+	"lexxy/lexer"
+	"lexxy/parser"
+	"lexxy/tokens"
 )
 
 const PROPMPT = ">> "
@@ -78,7 +78,6 @@ func Start(in io.Reader, out io.Writer) {
 	//		},
 	//	},
 	//}
-
 
 	scanner := bufio.NewScanner(in)
 

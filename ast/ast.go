@@ -2,14 +2,18 @@ package ast
 
 import (
 	"bytes"
+	"database/sql"
+	"fmt"
+	_ "github.com/go-sql-driver/mysql"
+	"lexxy/tokens"
 	"log"
-	"new_lexxy/tokens"
 	"strings"
 )
 
 type Node interface {
 	TokenLiteral() string
 	String() string
+	Json() string
 }
 
 type Statement interface {
@@ -23,119 +27,44 @@ type Expression interface {
 }
 
 type Program struct {
-	Statements      []Statement
+	Statements []Statement
 }
 
-type (
-	Builder interface {
-		AddRow(key string, value interface{}) Builder
-		GetRowValue(key string) *fieldImplementation
+type SearchParameter struct {
+	ColumnNumber int
+	ColumnName   string
+}
+
+func (p *Program) TryToRun() {
+
+	//var ctx context.Context
+	var db *sql.DB
+	var err error
+
+	db, err = sql.Open("mysql", "root:@/bnew")
+	if err != nil {
+		panic(err)
 	}
 
-	fieldImplementation struct {
-		content interface{}
+	defer db.Close()
+
+	rows, err := db.Query("select id from companies")
+	if err != nil {
+		panic(err)
 	}
 
-	mapImplementation struct {
-		definition map[string]*fieldImplementation
-	}
-)
+	defer rows.Close()
 
-func newMapImplementationV(key string, value interface{}) mapImplementation {
-	return mapImplementation{definition: map[string]*fieldImplementation{
-		key: {content: value},
-	}}
-}
-
-func newMapImplementation() mapImplementation {
-	return mapImplementation{definition: map[string]*fieldImplementation{}}
-}
-
-func NewMapper() Builder {
-	return &mapImplementation{definition: map[string]*fieldImplementation{}}
-}
-
-func (m *mapImplementation) AddRow(key string, value interface{}) Builder {
-	m.definition[key] = &fieldImplementation{
-		content: value,
-	}
-	return m
-}
-
-func (m *mapImplementation) GetRowValue(key string) *fieldImplementation {
-	return m.definition[key]
-}
-
-// console test text: [Service:(ID)]
-var mapper Builder
-
-func (p *Program) Serialize() {
-	mapper = NewMapper()
-	for _, statement := range p.Statements {
-		p.serialize(statement)
-	}
-
-	log.Println(mapper)
-}
-
-func (p *Program) serialize(stmt Statement) *fieldImplementation {
-
-	switch statement := stmt.(type) {
-	case *StructToken:
-
-
-
-		mapper.AddRow(statement.Itself.TokenLiteral(), newMapImplementation())
-
-		if statement != nil && len(statement.Children) > 0 {
-			p.evalFields(mapper.GetRowValue(statement.Itself.String()), statement.Children)
+	var out int64
+	for rows.Next() {
+		err = rows.Scan(&out)
+		if err != nil {
+			panic(err)
 		}
 
-		return mapper.GetRowValue(statement.Itself.String())
-		//if statement.Children != nil && len(statement.Children) > 0 {
-		//	if p.latestStatement != nil && p.latestStatement.String() == "" {
-		//		mapper.AddRow(statement.Itself.TokenLiteral(), newMapImplementation())
-		//		p.evalFields(mapper.GetRowValue(statement.Itself.String()), statement.Children)
-		//	} else {
-		//		mp := mapper.GetRowValue(p.latestStatement.String()).content.(mapImplementation)
-		//		mp.AddRow(statement.Itself.TokenLiteral(), newMapImplementation())
-		//		//mapper.AddRow(statement.Itself.TokenLiteral(), newMapImplementation())
-		//		p.evalFields(mp.GetRowValue(statement.Itself.TokenLiteral()), statement.Children)
-		//	}
-		//
-		//} else {
-		//	mapper.AddRow(statement.Itself.TokenLiteral(), nil)
-		//}
-
+		fmt.Println(out)
 	}
-}
 
-// test string: [Service:(ID,Name,Details:(Id,ServiceName,ServiceAddress))]
-func (p *Program) evalFields(fieldImp *fieldImplementation, fields []interface{}) {
-
-	for _, field := range fields {
-		switch field := field.(type) {
-		case *StructToken:
-			fieldImp.content = newMapImplementationV(field.TokenLiteral(), nil)
-			p.serialize(field)
-
-			//mapper.
-			//	AddRow("ServiceID", 9).
-			//	AddRow("Details", mapImplementation{definition: map[string]*fieldImplementation{
-			//		"DetailID": { content: 9 },
-			//		"Dte": { content: 7 },
-			//		"UUID": { content: "129487912-345689734-123789SXMÖÇ-123789" },
-			//		"MoreDetails": { content: mapImplementation{definition: map[string]*fieldImplementation{
-			//			"MoreDetailID": { content: 18 },
-			//			"Bla": { content: "bla" },
-			//			"And": { content: "and" },
-			//		}}},
-			//	}})
-		case *FieldToken:
-			mapImp := fieldImp.content.(mapImplementation)
-			mapImp.AddRow(field.TokenLiteral(), nil)
-		}
-	}
 }
 
 func (p *Program) String() string {
@@ -156,6 +85,24 @@ func (p *Program) String() string {
 	return out.String()
 }
 
+func (p *Program) Json() string {
+	var out bytes.Buffer
+
+	out.WriteString("{")
+
+	for _, s := range p.Statements {
+		out.WriteString(s.Json() + ",")
+	}
+
+	trim := strings.TrimRight(out.String(), ",")
+
+	out.Reset()
+	out.WriteString(trim)
+	out.WriteString("}")
+
+	return out.String()
+}
+
 func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
 		return p.Statements[0].TokenLiteral()
@@ -163,19 +110,39 @@ func (p *Program) TokenLiteral() string {
 
 	return ""
 }
+func (p *Program) SearchOn(args ...*SearchParameter) {
+	log.Println(p.Statements)
+	//for _, statement := range p.Statements {
+	//	SearchParameter{
+	//		ColumnNumber: 0,
+	//		ColumnName:   "",
+	//	}
+	//}
+}
 
 type StructToken struct {
 	Itself   *FieldToken
 	Children []interface{}
 }
 
-func (st *StructToken) statementNode()       {}
+func (st *StructToken) statementNode() {}
+func (st *StructToken) TokenLiteralJSON() string {
+	return fmt.Sprintf("\"%s\"", st.Itself.Token.Literal)
+}
 func (st *StructToken) TokenLiteral() string { return st.Itself.Token.Literal }
 func (st *StructToken) String() string {
 	var out bytes.Buffer
 
-	out.WriteString(st.Itself.Name.TokenLiteral() + ":")
-	out.WriteString("(")
+	out.WriteString(st.Itself.Name.TokenLiteral() + ":(")
+	inf(st.Children, &out)
+
+	return out.String()
+}
+func (st *StructToken) Json() string {
+	var out bytes.Buffer
+
+	out.WriteString(st.Itself.Name.TokenLiteralJSON() + ":")
+	out.WriteString("{")
 	inf(st.Children, &out)
 
 	return out.String()
@@ -187,11 +154,19 @@ type FieldToken struct {
 	Value Expression
 }
 
-func (ft *FieldToken) statementNode()       {}
-func (ft *FieldToken) TokenLiteral() string { return ft.Token.Literal }
+func (ft *FieldToken) statementNode()           {}
+func (ft *FieldToken) TokenLiteral() string     { return ft.Token.Literal }
+func (ft *FieldToken) TokenLiteralJSON() string { return fmt.Sprintf("\"%s\"", ft.Token.Literal) }
 func (ft *FieldToken) String() string {
 	var out bytes.Buffer
 	out.WriteString(ft.TokenLiteral())
+
+	return out.String()
+}
+
+func (ft *FieldToken) Json() string {
+	var out bytes.Buffer
+	out.WriteString(ft.TokenLiteralJSON())
 
 	return out.String()
 }
@@ -201,8 +176,9 @@ type Identifier struct {
 	Value string
 }
 
-func (i *Identifier) expressionNode()      {}
-func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
+func (i *Identifier) expressionNode()          {}
+func (i *Identifier) TokenLiteral() string     { return i.Token.Literal }
+func (i *Identifier) TokenLiteralJSON() string { return fmt.Sprintf("\"%s\"", i.Token.Literal) }
 
 func inf(children []interface{}, writer *bytes.Buffer) {
 	for _, ch := range children {

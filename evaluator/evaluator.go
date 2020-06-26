@@ -1,8 +1,8 @@
 package evaluator
 
 import (
-	"new_lexxy/ast"
-	"new_lexxy/object"
+	"lexxy/ast"
+	"lexxy/object"
 )
 
 func Eval(node ast.Node) object.Object {
@@ -12,12 +12,12 @@ func Eval(node ast.Node) object.Object {
 	case *ast.StructToken:
 		if node.Children != nil && len(node.Children) > 0 {
 
-			_struct := &object.Struct{ Itself: node.Itself.TokenLiteral() }
+			_struct := &object.Struct{Itself: node.Itself.TokenLiteral()}
 			evalFields(&_struct.Fields, node.Children)
 
 			return _struct
 		}
-		return &object.Struct{ Itself: node.Itself.TokenLiteral(), Fields: nil}
+		return &object.Struct{Itself: node.Itself.TokenLiteral(), Fields: nil}
 	}
 
 	return nil
@@ -32,14 +32,14 @@ func evalProgram(statements []ast.Statement) object.Object {
 	return result
 }
 
-func evalFields(outFields *[]interface{}, fields []interface{})  {
+func evalFields(outFields *[]interface{}, fields []interface{}) {
 	for _, field := range fields {
 		switch field := field.(type) {
 		case *ast.StructToken:
 			eva := Eval(field).(*object.Struct)
 			*outFields = append(*outFields, eva)
 		case *ast.FieldToken:
-			*outFields = append(*outFields, &object.Field{ Name: field.TokenLiteral() })
+			*outFields = append(*outFields, &object.Field{Name: field.TokenLiteral()})
 		}
 	}
 }

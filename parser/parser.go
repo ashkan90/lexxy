@@ -1,16 +1,17 @@
 package parser
 
 import (
+	"bytes"
 	"fmt"
-	"new_lexxy/ast"
-	"new_lexxy/lexer"
-	"new_lexxy/tokens"
+	"lexxy/ast"
+	"lexxy/lexer"
+	"lexxy/tokens"
 )
 
 type Parser struct {
 	l *lexer.Lexer
 
-	errors       []string
+	errors []string
 
 	curToken  tokens.Token
 	peekToken tokens.Token
@@ -70,9 +71,11 @@ func (p *Parser) parseStruct() ast.Statement {
 	}
 }
 
+var Q bytes.Buffer
+
 func (p *Parser) tStatement(selfRoot *ast.StructToken) *ast.StructToken {
 	if selfRoot == nil {
-		selfRoot = &ast.StructToken{ Itself: &ast.FieldToken{ Token: p.curToken }}
+		selfRoot = &ast.StructToken{Itself: &ast.FieldToken{Token: p.curToken}}
 
 		selfRoot.Itself.Name = &ast.Identifier{
 			Token: p.curToken,
@@ -112,6 +115,8 @@ func (p *Parser) tStatement(selfRoot *ast.StructToken) *ast.StructToken {
 					Value: p.curToken.Literal,
 				},
 			})
+
+			Q.WriteString(p.curToken.Literal + ",")
 
 		case tokens.ROOT:
 			newRootAsChildren := &ast.StructToken{

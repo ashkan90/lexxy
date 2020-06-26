@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"new_lexxy/tokens"
+	"lexxy/tokens"
 )
 
 type Lexer struct {
@@ -10,7 +10,6 @@ type Lexer struct {
 	readPosition int
 	ch           byte
 }
-
 
 func (l *Lexer) currentChIs(ch byte) bool {
 	return l.ch == ch
@@ -54,14 +53,12 @@ func (l *Lexer) skipWhitespace() {
 	}
 }
 
-
 func newToken(tokenType tokens.TokenType, ch byte) tokens.Token {
 	return tokens.Token{
 		Type:    tokenType,
 		Literal: string(ch),
 	}
 }
-
 
 func (l *Lexer) NextToken() tokens.Token {
 	var tok tokens.Token

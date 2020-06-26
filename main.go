@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"new_lexxy/repl"
+	"lexxy/repl"
 	"os"
 	"os/user"
 )

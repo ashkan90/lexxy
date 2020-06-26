@@ -1,34 +1,33 @@
 package evaluator
 
 import (
+	"lexxy/lexer"
+	"lexxy/object"
+	"lexxy/parser"
 	"log"
-	"new_lexxy/lexer"
-	"new_lexxy/object"
-	"new_lexxy/parser"
 	"testing"
 )
 
 func TestEval(t *testing.T) {
-	tests := []struct{
-		input string
+	tests := []struct {
+		input    string
 		expected string
 	}{
-		{input: "Company:(Test,Testtttt,Service:(ID, D))", expected: "Company" },
+		{input: "Company:(Test,Testtttt,Service:(ID, D))", expected: "Company"},
 		//{input: "Service:()", expected: "Service" },
 
 	}
 
 	for _, tt := range tests {
-		evaluated := testEval( tt.input)
+		evaluated := testEval(tt.input)
 		//if  evaluated := evaluated.(*object.Struct); len(evaluated.Fields) > 0{
 		//	log.Println("evaluated: ", evaluated.Fields[0].(*object.Field))
 		//}
 		fields := evaluated.(*object.Struct).Fields
 		log.Printf("ev1: %q\n", evaluated.(*object.Struct))
-		log.Printf("ev: %q\n", fields[len(fields) - 1].(*object.Struct))
+		log.Printf("ev: %q\n", fields[len(fields)-1].(*object.Struct))
 		testStructObject(t, evaluated, tt.expected)
 	}
-
 
 }
 
@@ -53,7 +52,6 @@ func testStructObject(t *testing.T, obj object.Object, expected string) bool {
 		t.Errorf("Struct's itself is not expected. got: %q (%+v)", result.Itself, expected)
 		return false
 	}
-
 
 	return true
 }
